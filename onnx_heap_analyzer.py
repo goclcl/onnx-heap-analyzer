@@ -255,19 +255,15 @@ def simulate_memory_usage(cfg, blocks, malloc_map, free_map):
         # Copy live set for this path
         live_set = live_set.copy()
 
-        # Apply malloc/free in this block
-        for instr in blocks.get(block_id, []):
-            instr = instr.strip()
+        # malloc: if variable allocated here
+        for var, (blk, size) in malloc_map.items():
+            if blk == block_id and var not in live_set:
+                live_set[var] = size
 
-            # malloc: if variable allocated here
-            for var, (blk, size) in malloc_map.items():
-                if blk == block_id and var not in live_set:
-                    live_set[var] = size
-
-            # free: if variable freed here
-            for var, fblk in free_map.items():
-                if fblk == block_id and var in live_set:
-                    del live_set[var]
+        # free: if variable freed here
+        for var, fblk in free_map.items():
+            if fblk == block_id and var in live_set:
+                del live_set[var]
 
         # Compute current live memory
         live_bytes = sum(live_set.values())
